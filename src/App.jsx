@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import initialData from './data/initialData.json';
 import {
     LayoutDashboard,
     FileSpreadsheet,
@@ -131,59 +132,30 @@ export default function App() {
     const [products, setProducts] = useState(() => {
         const saved = localStorage.getItem('abar_products');
         if (saved) return JSON.parse(saved);
-        return [
-            {
-                id: '1',
-                vendor: '아바르 유통',
-                name: '프리미엄 한우 세트',
-                category: '식품(냉동)',
-                spec: '1kg (등심, 채끝)',
-                composition: '등심 500g, 채끝 500g',
-                unitPrice: 45000,
-                shippingCost: 3500,
-                packagingCost: 2000,
-                lossRate: 2,
-                otherCosts: 0,
-                taxType: '면세',
-                marginRate: 23,
-                barcode: '8801234567890',
-                updatedAt: new Date().toISOString()
-            }
-        ];
+        return initialData.products || [];
     });
     const [history, setHistory] = useState(() => {
         const saved = localStorage.getItem('abar_history');
-        return saved ? JSON.parse(saved) : [];
+        if (saved) return JSON.parse(saved);
+        return initialData.history || [];
     });
 
     const [shippingRules, setShippingRules] = useState(() => {
         const saved = localStorage.getItem('abar_shipping_rules');
-        return saved ? JSON.parse(saved) : [
-            { id: 'r1', type: 'carrier', label: 'CJ대한통운', cost: 3200 },
-            { id: 'r2', type: 'carrier', label: '롯데택배', cost: 3000 },
-            { id: 'r3', type: 'carrier', label: '한진택배', cost: 3000 },
-            { id: 'r4', type: 'weight', label: '~2kg 소형', cost: 2800 },
-            { id: 'r5', type: 'weight', label: '2~5kg 중형', cost: 3500 },
-            { id: 'r6', type: 'weight', label: '5kg~ 대형', cost: 5000 },
-            { id: 'r7', type: 'quantity', label: '1개 단독배송', cost: 3000 },
-            { id: 'r8', type: 'quantity', label: '2개 묶음배송', cost: 4000 },
-            { id: 'r9', type: 'quantity', label: '10개 박스배송', cost: 12000 }
-        ];
+        if (saved) return JSON.parse(saved);
+        return initialData.shipping_rules || [];
     });
 
     const [homeshoppingChannels, setHomeshoppingChannels] = useState(() => {
         const saved = localStorage.getItem('abar_hs_channels');
-        return saved ? JSON.parse(saved) : [
-            { id: 'hs1', name: 'SK StOR', fixedFee: 16500000, commission: 15, deliveryCost: 2500, goalAmount: 100000000, confirmedRate: 83, celebCost: 2000000, remarks: '고정비 높음, 수수료 낮음' },
-            { id: 'hs2', name: 'KT 알파', fixedFee: 8800000, commission: 28, deliveryCost: 2500, goalAmount: 130000000, confirmedRate: 83, celebCost: 2000000, remarks: '정액비 낮아 리스크 적음' },
-            { id: 'hs3', name: 'GS홈쇼핑', fixedFee: 16500000, commission: 23, deliveryCost: 0, goalAmount: 130000000, confirmedRate: 83, celebCost: 4000000, remarks: '택배비 절감, 메인+보상 합산' },
-            { id: 'hs4', name: '쇼핑엔티', fixedFee: 0, commission: 32, deliveryCost: 2500, goalAmount: 45000000, confirmedRate: 83, celebCost: 2000000, remarks: '정액비 없음, 가장 안전' }
-        ];
+        if (saved) return JSON.parse(saved);
+        return initialData.hs_channels || [];
     });
 
     const [categories, setCategories] = useState(() => {
         const saved = localStorage.getItem('abar_categories');
-        return saved ? JSON.parse(saved) : DEFAULT_CATEGORIES;
+        if (saved) return JSON.parse(saved);
+        return initialData.categories || [];
     });
 
     useEffect(() => {
@@ -754,9 +726,11 @@ function ProductProposal({ products, onMarginUpdate, shippingRules }) {
 
     const [savedProposals, setSavedProposals] = useState(() => {
         try {
-            return JSON.parse(localStorage.getItem('savedProposals') || '[]');
+            const saved = localStorage.getItem('savedProposals');
+            if (saved) return JSON.parse(saved);
+            return initialData.proposals || [];
         } catch {
-            return [];
+            return initialData.proposals || [];
         }
     });
     const [currentProposalId, setCurrentProposalId] = useState('');
@@ -2066,9 +2040,11 @@ function HomeShoppingAnalysis({ channels, setChannels, products }) {
 
     const [savedProjects, setSavedProjects] = useState(() => {
         try {
-            return JSON.parse(localStorage.getItem('hsProjects') || '[]');
+            const saved = localStorage.getItem('hsProjects');
+            if (saved) return JSON.parse(saved);
+            return initialData.hs_projects || [];
         } catch {
-            return [];
+            return initialData.hs_projects || [];
         }
     });
 
@@ -2784,6 +2760,42 @@ function SettingsView({
                     <div className="pt-4 border-t border-white/5">
                         <button onClick={onLogout} className="btn-secondary w-full text-red-400 hover:text-white hover:bg-red-600/20">
                             로그아웃 (세션 종료)
+                        </button>
+                    </div>
+                </div>
+
+                <div className="space-y-4 pt-10 mt-10 border-t border-white/10">
+                    <h3 className="text-xl font-bold flex items-center gap-3 text-orange-400">
+                        <Download size={24} />
+                        배포용 데이터 추출
+                    </h3>
+                    <div className="glass-panel p-6 space-y-4 bg-orange-500/5 border-orange-500/20">
+                        <p className="text-sm text-slate-400">
+                            현재 등록된 모든 상품, 히스토리, 채널 설정을 소스 코드에 포함하여 배포하기 위한 데이터를 추출합니다.
+                            아래 버튼을 누른 후 생성되는 파일을 열어서 그 내용을 복사해 전달해 주세요.
+                        </p>
+                        <button
+                            className="btn-primary w-full bg-orange-600 hover:bg-orange-500 border-none h-14 text-lg"
+                            onClick={() => {
+                                const data = {
+                                    products: JSON.parse(localStorage.getItem('abar_products') || '[]'),
+                                    history: JSON.parse(localStorage.getItem('abar_history') || '[]'),
+                                    shipping_rules: JSON.parse(localStorage.getItem('abar_shipping_rules') || '[]'),
+                                    hs_channels: JSON.parse(localStorage.getItem('abar_hs_channels') || '[]'),
+                                    categories: JSON.parse(localStorage.getItem('abar_categories') || '[]'),
+                                    hs_projects: JSON.parse(localStorage.getItem('hsProjects') || '[]'),
+                                    proposals: JSON.parse(localStorage.getItem('abar_proposals') || '[]')
+                                };
+                                const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+                                const url = URL.createObjectURL(blob);
+                                const a = document.createElement('a');
+                                a.href = url;
+                                a.download = `abar_deployment_data.json`;
+                                a.click();
+                                alert('데이터 파일이 다운로드되었습니다. 파일 내용을 채팅창에 붙여넣어 주세요!');
+                            }}
+                        >
+                            전체 데이터 추출 (JSON 다운로드)
                         </button>
                     </div>
                 </div>

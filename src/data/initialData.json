@@ -1,0 +1,92 @@
+{
+    "products": [
+        {
+            "id": "17739106531990.8926262200215843",
+            "vendor": "(주)동방다보아",
+            "name": "NEW 피테로마 비타민 필링젤 때박살 각질관리",
+            "category": "생필품",
+            "unitPrice": 11920,
+            "taxType": "과세",
+            "updatedAt": "2026-03-19T08:31:48.172Z"
+        },
+        {
+            "id": "17739106531990.22948113742803355",
+            "vendor": "(주)동방다보아",
+            "name": "NEW 피테로마 비타민 필링젤 때박살 각질관리",
+            "category": "생필품",
+            "unitPrice": 15920,
+            "taxType": "과세",
+            "updatedAt": "2026-03-19T08:31:48.172Z"
+        },
+        {
+            "id": "17739106531990.15363272446861653",
+            "vendor": "(주)동방다보아",
+            "name": "피테로마 콜라겐 때박살",
+            "category": "생필품",
+            "unitPrice": 14900,
+            "taxType": "과세",
+            "updatedAt": "2026-03-19T08:31:48.172Z"
+        },
+        {
+            "id": "17739106531990.1899555008661833",
+            "vendor": "(주)동방다보아",
+            "name": "피테로마 콜라겐 때박살",
+            "category": "생필품",
+            "unitPrice": 19900,
+            "taxType": "과세",
+            "updatedAt": "2026-03-19T08:31:48.172Z"
+        },
+        {
+            "id": "17739106531990.3115700880455331",
+            "vendor": "(주)동방다보아",
+            "name": "피테로마 콜라겐 때박살",
+            "category": "생필품",
+            "unitPrice": 24900,
+            "broadcastPrice": 19920,
+            "taxType": "과세",
+            "updatedAt": "2026-03-19T08:31:48.172Z"
+        },
+        {
+            "id": "17739106531990.046154522710670554",
+            "vendor": "(주)동방다보아",
+            "name": "핸디 짤순이",
+            "category": "생필품",
+            "compositionQty": 1,
+            "compositionUnit": "개",
+            "unitPrice": 7400,
+            "taxType": "과세",
+            "updatedAt": "2026-03-19T08:31:48.172Z"
+        },
+        {
+            "id": "17739106531990.31863024156656894",
+            "vendor": "(주)설국",
+            "name": "부산 속시원한 대구탕",
+            "category": "일반건강식품",
+            "spec": "700g",
+            "compositionQty": 1,
+            "compositionUnit": "개",
+            "unitPrice": 3000,
+            "shippingCost": 2650,
+            "packagingCost": 1700,
+            "taxType": "과세",
+            "consumeLimit": "12개월",
+            "updatedAt": "2026-03-19T08:31:48.172Z",
+            "bundleQty": 4,
+            "t1Qty": 10,
+            "t1Cost": 2650,
+            "t3Qty": 20,
+            "t3Cost": 4650
+        }
+    ],
+    "history": [],
+    "shipping_rules": [],
+    "hs_channels": [],
+    "categories": [
+        "생필품",
+        "건강기능식품",
+        "식품(냉동)",
+        "일반건강식품"
+    ],
+    "hs_projects": [],
+    "proposals": []
+}
