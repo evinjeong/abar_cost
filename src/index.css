@@ -192,21 +192,13 @@ body {
   background: rgba(255, 255, 255, 0.1);
 }
 
-@media (max-width: 1024px) {
-  .desktop-table {
-    display: none !important;
-  }
-
-  .mobile-cards {
-    display: flex !important;
-  }
-}
-
+/* Mobile Card Visibility handled by Tailwind utility classes */
 .mobile-cards {
-  display: none;
+  display: flex;
   flex-direction: column;
   gap: 1rem;
 }
+
 
 /* Custom Textarea for wrap-able editing */
 .line-edit-input {

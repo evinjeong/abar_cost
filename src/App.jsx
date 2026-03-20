@@ -131,30 +131,30 @@ export default function App() {
     }, [activeTab]);
     const [products, setProducts] = useState(() => {
         const saved = localStorage.getItem('abar_products');
-        if (saved) return JSON.parse(saved);
+        if (saved && JSON.parse(saved).length > 0) return JSON.parse(saved);
         return initialData.products || [];
     });
     const [history, setHistory] = useState(() => {
         const saved = localStorage.getItem('abar_history');
-        if (saved) return JSON.parse(saved);
+        if (saved && JSON.parse(saved).length > 0) return JSON.parse(saved);
         return initialData.history || [];
     });
 
     const [shippingRules, setShippingRules] = useState(() => {
         const saved = localStorage.getItem('abar_shipping_rules');
-        if (saved) return JSON.parse(saved);
+        if (saved && JSON.parse(saved).length > 0) return JSON.parse(saved);
         return initialData.shipping_rules || [];
     });
 
     const [homeshoppingChannels, setHomeshoppingChannels] = useState(() => {
         const saved = localStorage.getItem('abar_hs_channels');
-        if (saved) return JSON.parse(saved);
+        if (saved && JSON.parse(saved).length > 0) return JSON.parse(saved);
         return initialData.hs_channels || [];
     });
 
     const [categories, setCategories] = useState(() => {
         const saved = localStorage.getItem('abar_categories');
-        if (saved) return JSON.parse(saved);
+        if (saved && JSON.parse(saved).length > 0) return JSON.parse(saved);
         return initialData.categories || [];
     });
 
@@ -619,16 +619,17 @@ function CostManagement({
             </div>
 
             <div className="glass-panel overflow-hidden border-none shadow-2xl">
-                <div className="overflow-x-auto">
+                {/* Desktop Table View */}
+                <div className="overflow-x-auto hidden lg:block">
                     <table className="w-full text-left border-collapse">
                         <thead>
                             <tr className="bg-white/5 border-b border-white/5">
-                                <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">업체 / 분류</th>
-                                <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">상품 정보</th>
-                                <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">매입단가</th>
-                                <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">기타비용</th>
-                                <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">최종원가</th>
-                                <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-center">관리</th>
+                                <th className="px-6 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider">업체 / 분류</th>
+                                <th className="px-6 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider">상품 정보</th>
+                                <th className="px-6 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider text-right">매입단가</th>
+                                <th className="px-6 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider text-right">기타비용</th>
+                                <th className="px-6 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider text-right">최종원가</th>
+                                <th className="px-6 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider text-center">관리</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-white/5">
@@ -636,15 +637,15 @@ function CostManagement({
                                 const finalCost = calculateFinalCost(product);
                                 return (
                                     <tr key={product.id} className="hover:bg-white/[0.02] transition-colors group cursor-pointer" onClick={() => onEdit(product)}>
-                                        <td className="px-6 py-5">
-                                            <div className="font-bold text-white">{product.vendor || '-'}</div>
-                                            <div className="text-[10px] bg-slate-800 text-slate-400 px-1.5 py-0.5 rounded inline-block mt-1 font-bold uppercase tracking-tighter">
+                                        <td className="px-6 py-4">
+                                            <div className="font-bold text-white text-xs">{product.vendor || '-'}</div>
+                                            <div className="text-[9px] bg-slate-800 text-slate-400 px-1.5 py-0.5 rounded inline-block mt-1 font-bold uppercase tracking-tighter">
                                                 {product.category}
                                             </div>
                                         </td>
-                                        <td className="px-6 py-5">
-                                            <div className="font-bold text-slate-200">{product.name}</div>
-                                            <div className="text-xs text-slate-500 flex flex-wrap items-center gap-x-3 gap-y-1 mt-1">
+                                        <td className="px-6 py-4">
+                                            <div className="font-bold text-slate-200 text-sm leading-snug">{product.name}</div>
+                                            <div className="text-[11px] text-slate-500 flex flex-wrap items-center gap-x-3 gap-y-1 mt-1">
                                                 <span className="flex items-center gap-1"><Tag size={12} /> {product.spec || '규격 없음'}</span>
                                                 {(product.compositionQty || product.compositionUnit) && (
                                                     <span className="flex items-center gap-1 font-bold text-primary-500/80">
@@ -653,17 +654,17 @@ function CostManagement({
                                                 )}
                                             </div>
                                         </td>
-                                        <td className="px-6 py-5 text-right font-mono text-sm">
+                                        <td className="px-6 py-4 text-right font-mono text-xs">
                                             {formatCurrency(product.unitPrice)}
                                         </td>
-                                        <td className="px-6 py-5 text-right text-xs text-slate-400">
+                                        <td className="px-6 py-4 text-right text-[11px] text-slate-400">
                                             <div>배송: {formatCurrency(product.shippingCost)}</div>
                                             <div>포장: {formatCurrency(product.packagingCost)}</div>
-                                            {product.bundleQty > 1 && <div className="text-primary-400">합포장 단위: {product.bundleQty}개</div>}
+                                            {product.bundleQty > 1 && <div className="text-primary-400">합포장: {product.bundleQty}개</div>}
                                         </td>
-                                        <td className="px-6 py-5 text-right">
-                                            <div className="font-black text-primary-400 font-mono">{formatCurrency(finalCost)}</div>
-                                            <div className="text-[10px] text-slate-500">로스율 {product.lossRate}% 포함</div>
+                                        <td className="px-6 py-4 text-right">
+                                            <div className="font-black text-primary-400 font-mono text-sm">{formatCurrency(finalCost)}</div>
+                                            <div className="text-[9px] text-slate-500">로스율 {product.lossRate}% 포함</div>
                                         </td>
                                         <td className="px-6 py-5 text-center">
                                             <div className="flex items-center justify-center gap-2">
@@ -702,8 +703,68 @@ function CostManagement({
                         </tbody>
                     </table>
                 </div>
+
+                {/* Mobile Card View */}
+                <div className="lg:hidden p-4 space-y-4">
+                    {products.length > 0 ? products.map(product => {
+                        const finalCost = calculateFinalCost(product);
+                        return (
+                            <div key={product.id} className="bg-white/5 border border-white/10 rounded-2xl p-5 space-y-4" onClick={() => onEdit(product)}>
+                                <div className="flex justify-between items-start">
+                                    <div className="space-y-1">
+                                        <div className="text-[11px] font-black text-primary-400 uppercase tracking-widest">{product.vendor}</div>
+                                        <div className="text-base font-black text-white leading-snug">{product.name}</div>
+                                        <div className="text-[10px] bg-slate-700 text-slate-300 px-2 py-0.5 rounded inline-block font-bold">
+                                            {product.category}
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <button onClick={(e) => { e.stopPropagation(); onEdit(product); }} className="p-2 rounded-lg bg-slate-800 text-slate-400 hover:text-white">
+                                            <Edit3 size={16} />
+                                        </button>
+                                        <button onClick={(e) => { e.stopPropagation(); onDelete(product.id); }} className="p-2 rounded-lg bg-red-500/10 text-red-400">
+                                            <Trash2 size={16} />
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-4 pt-4 border-t border-white/5">
+                                    <div>
+                                        <div className="text-[9px] text-slate-500 font-bold uppercase mb-1">매입단가 및 부대비용</div>
+                                        <div className="text-sm font-bold text-slate-200 font-mono">{formatCurrency(product.unitPrice)}</div>
+                                        <div className="text-[10px] text-slate-500 mt-1 space-y-0.5">
+                                            <div>배송비: {formatCurrency(product.shippingCost)}</div>
+                                            <div>포장비: {formatCurrency(product.packagingCost)}</div>
+                                        </div>
+                                    </div>
+                                    <div className="text-right">
+                                        <div className="text-[9px] text-slate-400 font-bold uppercase mb-1">최종 산출 원가</div>
+                                        <div className="text-lg font-black text-primary-400 font-mono">{formatCurrency(finalCost)}</div>
+                                        <div className="text-[10px] text-slate-500 mt-1">
+                                            정상 로스율 {product.lossRate}% 포함
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="flex items-center justify-between text-[11px] text-slate-500 pt-2 border-t border-white/[0.02]">
+                                    <div className="flex gap-3">
+                                        <span className="flex items-center gap-1"><Tag size={12} /> {product.spec || '-'}</span>
+                                        <span className="flex items-center gap-1 font-bold text-primary-400/80"><Box size={12} /> {product.compositionQty}{product.compositionUnit}</span>
+                                    </div>
+                                    {product.bundleQty > 1 && <div className="text-[10px] text-primary-400/60">합포장: {product.bundleQty}개</div>}
+                                </div>
+
+                            </div>
+                        );
+                    }) : (
+                        <div className="py-20 text-center opacity-20">
+                            <p className="text-sm font-bold">등록된 상품이 없습니다.</p>
+                        </div>
+                    )}
+                </div>
             </div>
-        </div>
+
+        </div >
     );
 }
 
@@ -727,7 +788,7 @@ function ProductProposal({ products, onMarginUpdate, shippingRules }) {
     const [savedProposals, setSavedProposals] = useState(() => {
         try {
             const saved = localStorage.getItem('savedProposals');
-            if (saved) return JSON.parse(saved);
+            if (saved && JSON.parse(saved).length > 0) return JSON.parse(saved);
             return initialData.proposals || [];
         } catch {
             return initialData.proposals || [];
@@ -984,7 +1045,8 @@ function ProductProposal({ products, onMarginUpdate, shippingRules }) {
             element.style.color = 'black';
             element.style.padding = '20px';
             // Increase width to match content to avoid horizontal truncation
-            const captureWidth = scrollArea ? scrollArea.scrollWidth + 100 : 1400;
+            // Force a minimum width for PDF table layout even on mobile
+            const captureWidth = Math.max(scrollArea ? scrollArea.scrollWidth + 100 : 1200, 1200);
             element.style.width = `${captureWidth}px`;
 
             if (scrollArea) {
@@ -1010,6 +1072,15 @@ function ProductProposal({ products, onMarginUpdate, shippingRules }) {
                         el.style.setProperty('display', 'none', 'important');
                     });
 
+                    // Force Table view for PDF even on mobile
+                    clonedDoc.querySelectorAll('.desktop-table').forEach(el => {
+                        el.style.setProperty('display', 'block', 'important');
+                        el.style.setProperty('overflow', 'visible', 'important');
+                    });
+                    clonedDoc.querySelectorAll('.mobile-cards').forEach(el => {
+                        el.style.setProperty('display', 'none', 'important');
+                    });
+
                     // Force black text for all elements
                     const allText = clonedElement.querySelectorAll('*');
                     allText.forEach(el => {
@@ -1025,7 +1096,7 @@ function ProductProposal({ products, onMarginUpdate, shippingRules }) {
                         titleEl.style.setProperty('display', 'block', 'important');
                         titleEl.style.setProperty('margin-top', '-20px', 'important');
                         titleEl.style.setProperty('margin-bottom', '15px', 'important');
-                        titleEl.style.setProperty('font-size', '24px', 'important');
+                        titleEl.style.setProperty('font-size', '18px', 'important');
                         titleEl.style.setProperty('font-weight', '900', 'important');
                         titleEl.style.setProperty('color', '#0f172a', 'important');
                         titleEl.style.setProperty('text-align', 'left', 'important');
@@ -1043,6 +1114,8 @@ function ProductProposal({ products, onMarginUpdate, shippingRules }) {
                         el.style.setProperty('background', 'white', 'important');
                         el.style.setProperty('border', '1px solid #e2e8f0', 'important'); // Very light thin gray
                         el.style.setProperty('color', '#0f172a', 'important');
+                        el.style.setProperty('font-size', '8.5px', 'important');
+                        el.style.setProperty('padding', '4px 2px', 'important');
                     });
 
                     // Highlight headers: Bold, Centered
@@ -1051,8 +1124,8 @@ function ProductProposal({ products, onMarginUpdate, shippingRules }) {
                         el.style.setProperty('font-weight', '900', 'important');
                         el.style.setProperty('text-align', 'center', 'important');
                         el.style.setProperty('color', '#0f172a', 'important');
-                        el.style.setProperty('font-size', '12px', 'important');
-                        el.style.setProperty('padding', '8px 4px', 'important');
+                        el.style.setProperty('font-size', '9px', 'important');
+                        el.style.setProperty('padding', '6px 2px', 'important');
                     });
 
                     // Footers
@@ -1082,10 +1155,12 @@ function ProductProposal({ products, onMarginUpdate, shippingRules }) {
                         wrapper.style.setProperty('border', 'none', 'important');
                         wrapper.style.setProperty('color', '#0f172a', 'important');
                         wrapper.style.setProperty('font-weight', '500', 'important'); // Normal font weight for inputs
+                        wrapper.style.setProperty('font-size', '8.5px', 'important');
                         wrapper.style.setProperty('display', 'flex', 'important');
                         wrapper.style.setProperty('align-items', 'center', 'important');
                         wrapper.style.setProperty('min-height', 'auto', 'important');
-                        wrapper.style.setProperty('padding', '4px 4px', 'important');
+                        wrapper.style.setProperty('padding', '2px 4px', 'important');
+
                         wrapper.style.setProperty('box-sizing', 'border-box', 'important');
                         wrapper.style.setProperty('overflow', 'visible', 'important');
                         wrapper.style.setProperty('line-height', '1.6', 'important');
@@ -1425,7 +1500,7 @@ function ProductProposal({ products, onMarginUpdate, shippingRules }) {
                                 </div>
                             </div>
                         </div>
-                        <div className="overflow-x-auto desktop-table hidden md:block border border-white/5 bg-white/[0.01] rounded-2xl shadow-2xl">
+                        <div className="overflow-x-auto desktop-table hidden lg:block border border-white/5 bg-white/[0.01] rounded-2xl shadow-2xl">
                             <table className="w-full text-left whitespace-nowrap text-sm">
                                 <thead className="bg-white/[0.02] border-b border-white/10 text-[10px] uppercase font-black tracking-widest text-slate-500">
                                     <tr>
@@ -1472,10 +1547,11 @@ function ProductProposal({ products, onMarginUpdate, shippingRules }) {
                                                     </td>
                                                 )}
 
+                                                {/* Name */}
                                                 {visibleColumns.includes('name') && (
-                                                    <td className="px-2 py-1.5 align-middle min-w-[280px] max-w-[350px] whitespace-normal">
+                                                    <td className="px-2 py-1 align-middle min-w-[280px] max-w-[350px] whitespace-normal">
                                                         <textarea
-                                                            className="bg-transparent border-none outline-none font-bold text-white text-[13px] w-full resize-none leading-tight focus:ring-1 focus:ring-primary-500/50 rounded transition-all"
+                                                            className="bg-transparent border-none outline-none font-bold text-white text-[12px] w-full resize-none leading-tight focus:ring-1 focus:ring-primary-500/50 rounded transition-all"
                                                             value={editState.productName ?? p.name}
                                                             rows={2}
                                                             onChange={(e) => handleLocalEdit(p.id, 'productName', e.target.value)}
@@ -1565,7 +1641,7 @@ function ProductProposal({ products, onMarginUpdate, shippingRules }) {
                         </div>
 
                         {/* Mobile Card View */}
-                        <div className="mobile-cards p-4 space-y-4 md:hidden">
+                        <div className="mobile-cards p-4 space-y-4 lg:hidden">
                             {selectedProducts.map(p => {
                                 const isSelected = selectedIds.includes(p.id);
                                 const editState = editStates[p.id] || {};
@@ -1753,7 +1829,7 @@ function ProductModal({ product, categories, onSave, onClose, shippingRules }) {
                     </button>
                 </div>
 
-                <div className="p-8 space-y-8 max-h-[70vh] overflow-y-auto custom-scrollbar">
+                <div className="p-8 space-y-8 max-h-[85vh] overflow-y-auto custom-scrollbar">
                     {/* Section: Basic Info */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-4">
@@ -1976,26 +2052,26 @@ function ProductModal({ product, categories, onSave, onClose, shippingRules }) {
                             <h5 className="text-[10px] font-black text-primary-400 uppercase tracking-widest flex items-center gap-2">
                                 <Box size={14} /> 단계별 배송비 설정 (설정 시 우선 적용)
                             </h5>
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                                 <div className="space-y-2">
                                     <label className="text-[10px] text-slate-400 font-bold block">1단계 (소량)</label>
-                                    <div className="flex gap-2">
-                                        <input type="number" className="input-field flex-1 h-10 text-xs font-mono" placeholder="수량(개)" value={formData.t1Qty || ''} onChange={e => handleChange('t1Qty', Number(e.target.value))} />
-                                        <input type="number" className="input-field flex-1 h-10 text-xs font-mono" placeholder="금액(원)" value={formData.t1Cost || ''} onChange={e => handleChange('t1Cost', Number(e.target.value))} />
+                                    <div className="grid grid-cols-2 gap-2">
+                                        <input type="number" className="input-field flex-1 h-10 text-xs font-mono px-2" placeholder="수량" value={formData.t1Qty || ''} onChange={e => handleChange('t1Qty', Number(e.target.value))} />
+                                        <input type="number" className="input-field flex-1 h-10 text-xs font-mono px-2" placeholder="금액" value={formData.t1Cost || ''} onChange={e => handleChange('t1Cost', Number(e.target.value))} />
                                     </div>
                                 </div>
                                 <div className="space-y-2">
                                     <label className="text-[10px] text-slate-400 font-bold block">2단계 (중량)</label>
-                                    <div className="flex gap-2">
-                                        <input type="number" className="input-field flex-1 h-10 text-xs font-mono" placeholder="수량(개)" value={formData.t2Qty || ''} onChange={e => handleChange('t2Qty', Number(e.target.value))} />
-                                        <input type="number" className="input-field flex-1 h-10 text-xs font-mono" placeholder="금액(원)" value={formData.t2Cost || ''} onChange={e => handleChange('t2Cost', Number(e.target.value))} />
+                                    <div className="grid grid-cols-2 gap-2">
+                                        <input type="number" className="input-field flex-1 h-10 text-xs font-mono px-2" placeholder="수량" value={formData.t2Qty || ''} onChange={e => handleChange('t2Qty', Number(e.target.value))} />
+                                        <input type="number" className="input-field flex-1 h-10 text-xs font-mono px-2" placeholder="금액" value={formData.t2Cost || ''} onChange={e => handleChange('t2Cost', Number(e.target.value))} />
                                     </div>
                                 </div>
                                 <div className="space-y-2">
                                     <label className="text-[10px] text-slate-400 font-bold block">3단계 (풀박스)</label>
-                                    <div className="flex gap-2">
-                                        <input type="number" className="input-field flex-1 h-10 text-xs font-mono" placeholder="수량(개)" value={formData.t3Qty || ''} onChange={e => handleChange('t3Qty', Number(e.target.value))} />
-                                        <input type="number" className="input-field flex-1 h-10 text-xs font-mono" placeholder="금액(원)" value={formData.t3Cost || ''} onChange={e => handleChange('t3Cost', Number(e.target.value))} />
+                                    <div className="grid grid-cols-2 gap-2">
+                                        <input type="number" className="input-field flex-1 h-10 text-xs font-mono px-2" placeholder="수량" value={formData.t3Qty || ''} onChange={e => handleChange('t3Qty', Number(e.target.value))} />
+                                        <input type="number" className="input-field flex-1 h-10 text-xs font-mono px-2" placeholder="금액" value={formData.t3Cost || ''} onChange={e => handleChange('t3Cost', Number(e.target.value))} />
                                     </div>
                                 </div>
                             </div>
@@ -2037,11 +2113,12 @@ function ProductModal({ product, categories, onSave, onClose, shippingRules }) {
 
 function HomeShoppingAnalysis({ channels, setChannels, products }) {
     const [selectedProductId, setSelectedProductId] = useState(products[0]?.id || '');
+    const [productSearchTerm, setProductSearchTerm] = useState('');
 
     const [savedProjects, setSavedProjects] = useState(() => {
         try {
             const saved = localStorage.getItem('hsProjects');
-            if (saved) return JSON.parse(saved);
+            if (saved && JSON.parse(saved).length > 0) return JSON.parse(saved);
             return initialData.hs_projects || [];
         } catch {
             return initialData.hs_projects || [];
@@ -2157,14 +2234,25 @@ function HomeShoppingAnalysis({ channels, setChannels, products }) {
     };
 
     const deleteProject = (id, e) => {
-        e.stopPropagation();
-        e.preventDefault();
+        if (e) {
+            e.stopPropagation();
+            e.preventDefault();
+        }
         if (confirm('이 저장된 프로젝트를 삭제하시겠습니까?')) {
             const newList = savedProjects.filter(p => p.id !== id);
             setSavedProjects(newList);
             localStorage.setItem('hsProjects', JSON.stringify(newList));
         }
     };
+
+    const filteredProductsForSelect = useMemo(() => {
+        if (!productSearchTerm) return products;
+        const lowSearch = productSearchTerm.toLowerCase();
+        return products.filter(p =>
+            p.name.toLowerCase().includes(lowSearch) ||
+            p.vendor.toLowerCase().includes(lowSearch)
+        );
+    }, [products, productSearchTerm]);
 
     const achievementRates = [0.6, 0.7, 0.8, 0.9, 1.0];
 
@@ -2210,36 +2298,71 @@ function HomeShoppingAnalysis({ channels, setChannels, products }) {
                     <p className="text-slate-400 text-sm mt-2 font-bold uppercase tracking-widest opacity-60">방송 조건 및 달성률에 따른 정교한 수익성 분석기</p>
                 </div>
                 <div className="flex flex-wrap items-center gap-3">
-                    <select
-                        className="input-field h-12 min-w-[200px] bg-indigo-900/20 border-indigo-500/30 text-indigo-200"
-                        onChange={(e) => {
-                            loadProject(e.target.value);
-                            e.target.value = '';
-                        }}
-                    >
-                        <option value="">💾 저장된 시나리오 로드...</option>
-                        {savedProjects.map(p => <option key={p.id} value={p.id}>{p.name} ({new Date(p.updatedAt).toLocaleDateString()})</option>)}
-                    </select>
-                    <button className="btn-secondary h-12 px-5 flex items-center justify-center gap-2 border-indigo-500/50 text-indigo-300 hover:bg-indigo-500 hover:text-white" onClick={saveProject} title="현재 설정 저장">
-                        <Save size={18} /> <span className="text-xs font-bold uppercase tracking-wider hidden md:inline">Save</span>
-                    </button>
+                    <div className="flex items-center gap-2">
+                        <select
+                            className="input-field h-12 min-w-[200px] bg-indigo-900/20 border-indigo-500/30 text-indigo-200"
+                            onChange={(e) => {
+                                loadProject(e.target.value);
+                                e.target.value = '';
+                            }}
+                        >
+                            <option value="">💾 저장된 시나리오 로드...</option>
+                            {savedProjects.map(p => <option key={p.id} value={p.id}>{p.name} ({new Date(p.updatedAt).toLocaleDateString()})</option>)}
+                        </select>
+                        <button className="btn-secondary h-12 px-5 flex items-center justify-center gap-2 border-indigo-500/50 text-indigo-300 hover:bg-indigo-500 hover:text-white" onClick={saveProject} title="현재 설정 저장">
+                            <Save size={18} /> <span className="text-xs font-bold uppercase tracking-wider hidden md:inline">Save</span>
+                        </button>
+                    </div>
 
                     <div className="w-px h-8 bg-white/10 mx-2 hidden md:block"></div>
 
-                    <select
-                        className="input-field h-12 min-w-[280px] bg-white/5 border-white/10 flex-1 xl:flex-none"
-                        value={selectedProductId}
-                        onChange={(e) => handleProductChange(e.target.value)}
-                    >
-                        <option value="">분석할 상품 선택...</option>
-                        {products.map(p => <option key={p.id} value={p.id}>{p.name} ({formatCurrency(p.broadcastPrice || p.unitPrice)})</option>)}
-                    </select>
+                    <div className="flex items-center gap-2 flex-1 xl:flex-none">
+                        <div className="relative group">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-primary-500 transition-colors" size={14} />
+                            <input
+                                type="text"
+                                className="input-field h-12 pl-10 pr-4 w-full md:w-[200px] bg-white/5 border-white/10"
+                                placeholder="상품 검색..."
+                                value={productSearchTerm}
+                                onChange={e => setProductSearchTerm(e.target.value)}
+                            />
+                        </div>
+                        <select
+                            className="input-field h-12 min-w-[280px] bg-white/5 border-white/10"
+                            value={selectedProductId}
+                            onChange={(e) => handleProductChange(e.target.value)}
+                        >
+                            <option value="">분석할 상품 선택...</option>
+                            {filteredProductsForSelect.map(p => <option key={p.id} value={p.id}>{p.name} ({formatCurrency(p.broadcastPrice || p.unitPrice)})</option>)}
+                        </select>
+                    </div>
                     <button className="btn-primary h-12 px-6 flex items-center justify-center gap-2" onClick={addChannel}>
                         <Plus size={18} />
                         <span className="font-black uppercase tracking-widest text-xs hidden sm:inline">CHANNEL UP</span>
                     </button>
                 </div>
             </div>
+
+            {/* Saved Projects Quick List with Delete */}
+            {savedProjects.length > 0 && (
+                <div className="flex flex-wrap gap-2 animate-in fade-in duration-500">
+                    <span className="text-[10px] font-black text-slate-500 uppercase flex items-center mr-2">저장된 시나리오:</span>
+                    {savedProjects.map(p => (
+                        <div key={p.id} className="flex items-center gap-2 px-3 py-1 bg-white/5 border border-white/10 rounded-full group hover:border-indigo-500/30 transition-all">
+                            <button onClick={() => loadProject(p.id)} className="text-[10px] font-bold text-slate-400 group-hover:text-indigo-300 uppercase tracking-widest">
+                                {p.name}
+                            </button>
+                            <button
+                                onClick={(e) => deleteProject(p.id, e)}
+                                className="text-slate-600 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all"
+                                title="삭제"
+                            >
+                                <X size={12} />
+                            </button>
+                        </div>
+                    ))}
+                </div>
+            )}
 
             {/* Saved Projects Quick List (Optional, can be hidden if dropdown is enough, using dropdown for now) */}
 
@@ -2757,7 +2880,18 @@ function SettingsView({
                             >변경</button>
                         </div>
                     </div>
-                    <div className="pt-4 border-t border-white/5">
+                    <div className="pt-4 border-t border-white/5 space-y-4">
+                        <button
+                            onClick={() => {
+                                if (confirm('모든 데이터를 초기 설정으로 되돌리시겠습니까? 현재 저장된 모든 정보가 삭제됩니다.')) {
+                                    localStorage.clear();
+                                    window.location.reload();
+                                }
+                            }}
+                            className="btn-secondary w-full text-orange-400 hover:text-white hover:bg-orange-600/20"
+                        >
+                            시스템 데이터 초기화 (Reset)
+                        </button>
                         <button onClick={onLogout} className="btn-secondary w-full text-red-400 hover:text-white hover:bg-red-600/20">
                             로그아웃 (세션 종료)
                         </button>
