@@ -105,8 +105,6 @@ export const calculatePrices = (finalCost, supplyMargin, sellMargin, taxType = '
  * Format currency to KRW string
  */
 export const formatCurrency = (val) => {
-    return new Intl.NumberFormat('ko-KR', {
-        style: 'currency',
-        currency: 'KRW',
-    }).format(val);
+    if (val === undefined || val === null) return '0';
+    return Number(val).toLocaleString('ko-KR');
 };

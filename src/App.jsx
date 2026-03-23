@@ -775,7 +775,7 @@ function CostManagement({
 function ProductProposal({ products, onMarginUpdate, shippingRules }) {
     const [globalSupplyMargin, setGlobalSupplyMargin] = useState(20);
     const [globalSellMargin, setGlobalSellMargin] = useState(30);
-    const [selectedIds, setSelectedIds] = useState([]);
+    const [selectedItems, setSelectedItems] = useState([]);
     const [editStates, setEditStates] = useState({});
     const [searchQuery, setSearchQuery] = useState('');
     const [visibleColumns, setVisibleColumns] = useState([
@@ -809,7 +809,7 @@ function ProductProposal({ products, onMarginUpdate, shippingRules }) {
             name,
             globalSupplyMargin,
             globalSellMargin,
-            selectedIds,
+            selectedItems,
             editStates,
             visibleColumns,
             columnOrder,
@@ -839,7 +839,7 @@ function ProductProposal({ products, onMarginUpdate, shippingRules }) {
         if (confirm(`'${pData.name}' 제안서를 불러오시겠습니까? 현재 화면 내용은 덮어씌워집니다.`)) {
             setGlobalSupplyMargin(pData.globalSupplyMargin || 20);
             setGlobalSellMargin(pData.globalSellMargin || 30);
-            setSelectedIds(pData.selectedIds || []);
+            setSelectedItems(pData.selectedItems || (pData.selectedIds ? pData.selectedIds.map(id => ({ uid: id + '_' + Date.now() + Math.random(), productId: id })) : []));
             setEditStates(pData.editStates || {});
             setVisibleColumns(pData.visibleColumns || [
                 'name', 'spec', 'proposalQty', 'composition', 'taxType', 'supplyPrice', 'sellingPrice', 'onlinePrice', 'remarks'
@@ -858,7 +858,7 @@ function ProductProposal({ products, onMarginUpdate, shippingRules }) {
             setSavedProposals(newList);
             localStorage.setItem('savedProposals', JSON.stringify(newList));
             setCurrentProposalId('');
-            setSelectedIds([]);
+            setSelectedItems([]);
             setEditStates({});
         }
     };
@@ -908,24 +908,26 @@ function ProductProposal({ products, onMarginUpdate, shippingRules }) {
         );
     };
 
-    const toggleSelect = (id) => {
-        if (selectedIds.includes(id)) setSelectedIds(selectedIds.filter(i => i !== id));
-        else setSelectedIds([...selectedIds, id]);
+    const addItemId = (productId) => {
+        setSelectedItems(prev => [...prev, { uid: Date.now().toString() + Math.random().toString(), productId }]);
+    };
+
+    const removeItemUid = (uid) => {
+        setSelectedItems(prev => prev.filter(item => item.uid !== uid));
     };
 
     const selectedProducts = useMemo(() => {
-        return products
-            .filter(p => {
-                // 제안서 레이아웃에는 선택된 상품들만 표시함 (검색어와 무관하게 유지)
-                return selectedIds.includes(p.id);
-            })
-            .map(p => {
-                const sMargin = editStates[p.id]?.supplyMargin ?? globalSupplyMargin;
-                const mMargin = editStates[p.id]?.sellMargin ?? globalSellMargin;
-                const pQty = Number(editStates[p.id]?.proposalQty ?? 1);
+        return selectedItems
+            .map(item => {
+                const p = products.find(prod => prod.id === item.productId);
+                if (!p) return null;
 
-                // 구성(composition)에서 단위 앞의 숫자(수량)만 추출하여 곱해줌
-                const compStr = String(editStates[p.id]?.composition || p.compositionQty || 1);
+                const stateId = item.uid;
+                const sMargin = editStates[stateId]?.supplyMargin ?? globalSupplyMargin;
+                const mMargin = editStates[stateId]?.sellMargin ?? globalSellMargin;
+                const pQty = Number(editStates[stateId]?.proposalQty ?? 1);
+
+                const compStr = String(editStates[stateId]?.composition || p.compositionQty || 1);
                 const compQtyMatch = compStr.match(/(\d+)/);
                 const compQty = compQtyMatch ? parseInt(compQtyMatch[1], 10) : Number(p.compositionQty || 1);
 
@@ -934,30 +936,35 @@ function ProductProposal({ products, onMarginUpdate, shippingRules }) {
                 const totalCost = baseCost * totalQty;
                 const pricing = calculatePrices(totalCost, sMargin, mMargin);
 
-                // 만약 사용자가 '공급가'를 직접 수정했다면 그 값을 쓰고, 아니면 계산된 값을 씀
-                const finalSupplyPrice = editStates[p.id]?.supplyPrice ?? pricing.supplyPrice;
+                const finalSupplyPrice = editStates[stateId]?.supplyPrice ?? pricing.supplyPrice;
 
-                // 판매가는 '결정된 공급가' 대비 '판매가 마진'을 붙여야 함 
-                // (만약 판매가도 직접 수정했다면 수정한 값을 씀)
                 const mMarginFactor = 1 - (Number(mMargin) / 100);
                 const calculatedSellPrice = mMarginFactor > 0
                     ? Math.round(finalSupplyPrice / mMarginFactor / 10) * 10
                     : finalSupplyPrice;
 
-                const finalSellPrice = editStates[p.id]?.sellingPrice ?? calculatedSellPrice;
+                const finalSellPrice = editStates[stateId]?.sellingPrice ?? calculatedSellPrice;
+
+                const calculatedSupplyMarginRate = finalSupplyPrice > 0 ? ((finalSupplyPrice - totalCost) / finalSupplyPrice * 100).toFixed(1) : 0;
+                const calculatedSellMarginRate = finalSellPrice > 0 ? ((finalSellPrice - finalSupplyPrice) / finalSellPrice * 100).toFixed(1) : 0;
 
                 return {
                     ...p,
-                    ...editStates[p.id],
+                    ...editStates[stateId],
+                    uid: item.uid,
+                    productId: p.id,
                     supplyMargin: sMargin,
                     sellMargin: mMargin,
                     supplyPrice: Number(finalSupplyPrice),
                     sellingPrice: Number(finalSellPrice),
-                    onlinePrice: Number(editStates[p.id]?.onlinePrice ?? p.onlinePrice ?? 0),
-                    calculatedCost: totalCost
+                    onlinePrice: Number(editStates[stateId]?.onlinePrice ?? p.onlinePrice ?? 0),
+                    calculatedCost: totalCost,
+                    calculatedSupplyMarginRate,
+                    calculatedSellMarginRate
                 };
-            });
-    }, [products, selectedIds, globalSupplyMargin, globalSellMargin, editStates, shippingRules]);
+            })
+            .filter(Boolean);
+    }, [products, selectedItems, globalSupplyMargin, globalSellMargin, editStates, shippingRules]);
 
     const tableTotals = useMemo(() => {
         const sums = {
@@ -1004,7 +1011,6 @@ function ProductProposal({ products, onMarginUpdate, shippingRules }) {
 
     const handleExportExcel = () => {
         const data = selectedProducts
-            .filter(p => selectedIds.includes(p.id))
             .map(p => {
                 const row = {};
                 columnOrder.forEach(key => {
@@ -1258,7 +1264,7 @@ function ProductProposal({ products, onMarginUpdate, shippingRules }) {
                                 loadProposal(e.target.value);
                             } else {
                                 setCurrentProposalId('');
-                                setSelectedIds([]);
+                                setSelectedItems([]);
                                 setEditStates({});
                             }
                         }}
@@ -1277,13 +1283,13 @@ function ProductProposal({ products, onMarginUpdate, shippingRules }) {
 
                     <div className="w-px h-8 bg-white/10 mx-2 hidden md:block"></div>
 
-                    <button className="btn-secondary h-12" onClick={() => window.print()} disabled={selectedIds.length === 0}>
+                    <button className="btn-secondary h-12" onClick={() => window.print()} disabled={selectedItems.length === 0}>
                         <Printer size={18} /> 인쇄하기
                     </button>
-                    <button className="btn-secondary h-12" onClick={handleExportPDF} disabled={selectedIds.length === 0}>
+                    <button className="btn-secondary h-12" onClick={handleExportPDF} disabled={selectedItems.length === 0}>
                         <FileText size={18} /> PDF 저장
                     </button>
-                    <button className="btn-primary h-12" onClick={handleExportExcel} disabled={selectedIds.length === 0}>
+                    <button className="btn-primary h-12" onClick={handleExportExcel} disabled={selectedItems.length === 0}>
                         <Download size={18} /> Excel 출력
                     </button>
                 </div>
@@ -1357,7 +1363,7 @@ function ProductProposal({ products, onMarginUpdate, shippingRules }) {
                                                 onClick={() => {
                                                     if (confirm('공급가 마진을 일괄 적용하시겠습니까?')) {
                                                         const newEdits = { ...editStates };
-                                                        products.forEach(p => { newEdits[p.id] = { ...newEdits[p.id], supplyMargin: globalSupplyMargin }; });
+                                                        selectedItems.forEach(item => { newEdits[item.uid] = { ...newEdits[item.uid], supplyMargin: globalSupplyMargin }; });
                                                         setEditStates(newEdits);
                                                     }
                                                 }}
@@ -1379,7 +1385,7 @@ function ProductProposal({ products, onMarginUpdate, shippingRules }) {
                                                 onClick={() => {
                                                     if (confirm('판매가 마진을 일괄 적용하시겠습니까?')) {
                                                         const newEdits = { ...editStates };
-                                                        products.forEach(p => { newEdits[p.id] = { ...newEdits[p.id], sellMargin: globalSellMargin }; });
+                                                        selectedItems.forEach(item => { newEdits[item.uid] = { ...newEdits[item.uid], sellMargin: globalSellMargin }; });
                                                         setEditStates(newEdits);
                                                     }
                                                 }}
@@ -1395,7 +1401,7 @@ function ProductProposal({ products, onMarginUpdate, shippingRules }) {
                             <div className="flex items-center gap-8">
                                 <div className="space-y-1">
                                     <span className="text-[9px] text-slate-500 font-black uppercase block">선택 품목</span>
-                                    <span className="text-white font-black text-xl leading-none">{selectedIds.length}<span className="text-xs font-normal text-slate-400 ml-1">개</span></span>
+                                    <span className="text-white font-black text-xl leading-none">{selectedItems.length}<span className="text-xs font-normal text-slate-400 ml-1">개</span></span>
                                 </div>
                                 <div className="w-px h-8 bg-white/10" />
                                 <div className="space-y-1">
@@ -1433,14 +1439,14 @@ function ProductProposal({ products, onMarginUpdate, shippingRules }) {
                                         </div>
                                         <div className="divide-y divide-white/5">
                                             {matchingProducts.map(p => {
-                                                const isSelected = selectedIds.includes(p.id);
+                                                const isSelected = selectedItems.some(item => item.productId === p.id);
                                                 return (
                                                     <div
                                                         key={p.id}
                                                         onClick={(e) => {
                                                             e.preventDefault();
                                                             e.stopPropagation();
-                                                            toggleSelect(p.id);
+                                                            addItemId(p.id);
                                                             setSearchQuery('');
                                                         }}
                                                         className={cn(
@@ -1476,8 +1482,8 @@ function ProductProposal({ products, onMarginUpdate, shippingRules }) {
                                                 onClick={(e) => {
                                                     e.preventDefault();
                                                     e.stopPropagation();
-                                                    const newIds = [...new Set([...selectedIds, ...matchingProducts.map(p => p.id)])];
-                                                    setSelectedIds(newIds);
+                                                    const newItems = matchingProducts.map(p => ({ uid: Date.now().toString() + Math.random().toString(), productId: p.id }));
+                                                    setSelectedItems(prev => [...prev, ...newItems]);
                                                     setSearchQuery('');
                                                 }}
                                                 className="text-[11px] font-black text-primary-400 py-1 hover:text-primary-300 w-full"
@@ -1488,7 +1494,7 @@ function ProductProposal({ products, onMarginUpdate, shippingRules }) {
                             </div>
                             <div className="flex items-center gap-2">
                                 <button
-                                    onClick={() => { if (confirm('모든 품목을 해제하시겠습니까?')) setSelectedIds([]); }}
+                                    onClick={() => { if (confirm('모든 품목을 해제하시겠습니까?')) setSelectedItems([]); }}
                                     className="btn-secondary h-11 px-4 text-xs font-bold border-red-500/20 text-red-400 hover:bg-red-500/10"
                                 >
                                     <Trash2 size={14} /> 선택 초기화
@@ -1496,7 +1502,7 @@ function ProductProposal({ products, onMarginUpdate, shippingRules }) {
                                 <div className="h-8 w-px bg-white/10 mx-1 hidden sm:block" />
                                 <div className="text-right hidden sm:block lg:min-w-[120px]">
                                     <div className="text-[10px] text-slate-500 font-black uppercase tracking-widest text-right">활성 제안서</div>
-                                    <div className="text-primary-400 font-mono font-black text-sm">{selectedIds.length}개 품목 구성 중</div>
+                                    <div className="text-primary-400 font-mono font-black text-sm">{selectedItems.length}개 품목 구성 중</div>
                                 </div>
                             </div>
                         </div>
@@ -1516,14 +1522,14 @@ function ProductProposal({ products, onMarginUpdate, shippingRules }) {
                                 </thead>
                                 <tbody className="divide-y divide-white/5">
                                     {selectedProducts.map(p => {
-                                        const isSelected = selectedIds.includes(p.id);
-                                        const editState = editStates[p.id] || {};
+                                        const isSelected = true;
+                                        const editState = editStates[p.uid] || {};
                                         const extraColumns = columnOrder.filter(key =>
                                             visibleColumns.includes(key) && key !== 'image' && key !== 'name'
                                         );
 
                                         return (
-                                            <tr key={p.id} className={cn(
+                                            <tr key={p.uid} className={cn(
                                                 "transition-colors group",
                                                 isSelected ? "bg-primary-500/5 hover:bg-primary-500/10" : "hover:bg-white/[0.02]"
                                             )}>
@@ -1554,8 +1560,22 @@ function ProductProposal({ products, onMarginUpdate, shippingRules }) {
                                                             className="bg-transparent border-none outline-none font-bold text-white text-[12px] w-full resize-none leading-tight focus:ring-1 focus:ring-primary-500/50 rounded transition-all"
                                                             value={editState.productName ?? p.name}
                                                             rows={2}
-                                                            onChange={(e) => handleLocalEdit(p.id, 'productName', e.target.value)}
+                                                            onChange={(e) => handleLocalEdit(p.uid, 'productName', e.target.value)}
                                                         />
+                                                        <div className="no-print mt-2 p-1.5 rounded bg-white/5 border border-white/10 text-[10px] flex flex-wrap items-center gap-x-3 gap-y-1">
+                                                            <div className="flex gap-1 items-center">
+                                                                <span className="text-slate-400 font-bold uppercase">원가</span>
+                                                                <span className="text-white font-mono">{formatCurrency(Math.round(p.calculatedCost))}</span>
+                                                            </div>
+                                                            <div className="flex gap-1 items-center">
+                                                                <span className="text-slate-400 font-bold uppercase">공급마진율</span>
+                                                                <span className="text-primary-400 font-mono">{p.calculatedSupplyMarginRate}%</span>
+                                                            </div>
+                                                            <div className="flex gap-1 items-center">
+                                                                <span className="text-slate-400 font-bold uppercase">판매마진율</span>
+                                                                <span className="text-teal-400 font-mono">{p.calculatedSellMarginRate}%</span>
+                                                            </div>
+                                                        </div>
                                                     </td>
                                                 )}
 
@@ -1571,13 +1591,16 @@ function ProductProposal({ products, onMarginUpdate, shippingRules }) {
                                                         <td key={key} className="px-2 py-1.5 align-middle text-right max-w-[120px]">
                                                             {isPrice || ['cartonQty', 'proposalQty'].includes(key) ? (
                                                                 <input
-                                                                    type="number"
+                                                                    type="text"
                                                                     className={cn(
                                                                         "bg-transparent border border-transparent hover:border-white/10 rounded px-1 py-1 w-full text-right font-mono text-[11px] focus:bg-slate-900 focus:border-primary-500 transition-all",
                                                                         key === 'sellingPrice' ? "text-primary-400 font-black text-xs" : "font-bold text-slate-300"
                                                                     )}
-                                                                    value={cellValue || 0}
-                                                                    onChange={(e) => handleLocalEdit(p.id, key, Number(e.target.value))}
+                                                                    value={isPrice ? formatCurrency(cellValue || 0) : (cellValue || 0)}
+                                                                    onChange={(e) => {
+                                                                        const raw = e.target.value.replace(/[^0-9]/g, '');
+                                                                        handleLocalEdit(p.uid, key, Number(raw));
+                                                                    }}
                                                                 />
                                                             ) : key === 'remarks' ? (
                                                                 <textarea
@@ -1585,13 +1608,13 @@ function ProductProposal({ products, onMarginUpdate, shippingRules }) {
                                                                     value={cellValue ?? ''}
                                                                     placeholder="..."
                                                                     rows={2}
-                                                                    onChange={(e) => handleLocalEdit(p.id, key, e.target.value)}
+                                                                    onChange={(e) => handleLocalEdit(p.uid, key, e.target.value)}
                                                                 />
                                                             ) : (
                                                                 <input
                                                                     className="bg-transparent border border-transparent hover:border-white/10 rounded px-1 py-1 w-full text-center text-[11px] text-slate-300 focus:bg-slate-900 focus:border-primary-500 transition-all"
                                                                     value={cellValue ?? ''}
-                                                                    onChange={(e) => handleLocalEdit(p.id, key, e.target.value)}
+                                                                    onChange={(e) => handleLocalEdit(p.uid, key, e.target.value)}
                                                                 />
                                                             )}
                                                         </td>
@@ -1605,7 +1628,7 @@ function ProductProposal({ products, onMarginUpdate, shippingRules }) {
                                                         onClick={(e) => {
                                                             e.preventDefault();
                                                             e.stopPropagation();
-                                                            toggleSelect(p.id);
+                                                            removeItemUid(p.uid);
                                                         }}
                                                         className="p-1 rounded bg-red-500/10 text-red-500 opacity-20 hover:opacity-100 hover:bg-red-500 hover:text-white transition-all transform active:scale-95"
                                                         title="제거"
@@ -1643,10 +1666,10 @@ function ProductProposal({ products, onMarginUpdate, shippingRules }) {
                         {/* Mobile Card View */}
                         <div className="mobile-cards p-4 space-y-4 lg:hidden">
                             {selectedProducts.map(p => {
-                                const isSelected = selectedIds.includes(p.id);
-                                const editState = editStates[p.id] || {};
+                                const isSelected = true;
+                                const editState = editStates[p.uid] || {};
                                 return (
-                                    <div key={p.id} className={cn(
+                                    <div key={p.uid} className={cn(
                                         "glass-panel p-4 space-y-4 border-l-4 transition-all no-print relative",
                                         isSelected ? "border-l-primary-500 bg-primary-600/10 shadow-lg scale-[1.01]" : "border-l-transparent"
                                     )}>
@@ -1655,7 +1678,7 @@ function ProductProposal({ products, onMarginUpdate, shippingRules }) {
                                             onClick={(e) => {
                                                 e.preventDefault();
                                                 e.stopPropagation();
-                                                toggleSelect(p.id);
+                                                removeItemUid(p.uid);
                                             }}
                                             className="absolute top-2 right-2 p-2 rounded-full bg-red-500/10 text-red-500 active:bg-red-500 active:text-white transition-all z-10"
                                         >
@@ -1681,8 +1704,22 @@ function ProductProposal({ products, onMarginUpdate, shippingRules }) {
                                                     className="line-edit-input font-black text-white text-sm leading-tight hover:bg-white/5"
                                                     value={editState.productName ?? p.name}
                                                     rows={2}
-                                                    onChange={(e) => handleLocalEdit(p.id, 'productName', e.target.value)}
+                                                    onChange={(e) => handleLocalEdit(p.uid, 'productName', e.target.value)}
                                                 />
+                                                <div className="no-print mt-2 p-1.5 rounded bg-white/5 border border-white/10 text-[10px] grid grid-cols-2 gap-y-1">
+                                                    <div className="flex gap-1 items-center">
+                                                        <span className="text-slate-400 font-bold uppercase">원가</span>
+                                                        <span className="text-white font-mono">{formatCurrency(Math.round(p.calculatedCost))}</span>
+                                                    </div>
+                                                    <div className="flex gap-1 items-center justify-end">
+                                                        <span className="text-slate-400 font-bold uppercase">공급마진율</span>
+                                                        <span className="text-primary-400 font-mono">{p.calculatedSupplyMarginRate}%</span>
+                                                    </div>
+                                                    <div className="flex gap-1 items-center col-span-2 justify-end">
+                                                        <span className="text-slate-400 font-bold uppercase">판매마진율</span>
+                                                        <span className="text-teal-400 font-mono">{p.calculatedSellMarginRate}%</span>
+                                                    </div>
+                                                </div>
                                             </div>
                                         </div>
 
@@ -1690,19 +1727,25 @@ function ProductProposal({ products, onMarginUpdate, shippingRules }) {
                                             <div className="space-y-1">
                                                 <label className="text-[10px] text-slate-500 font-black uppercase">공급가액</label>
                                                 <input
-                                                    type="number"
+                                                    type="text"
                                                     className="bg-slate-900/50 border border-white/5 rounded px-2 py-1.5 w-full text-right font-mono font-bold text-primary-400 text-sm"
-                                                    value={editState.supplyPrice ?? p.supplyPrice ?? p.unitPrice}
-                                                    onChange={(e) => handleLocalEdit(p.id, 'supplyPrice', Number(e.target.value))}
+                                                    value={formatCurrency(editState.supplyPrice ?? p.supplyPrice ?? p.unitPrice)}
+                                                    onChange={(e) => {
+                                                        const raw = e.target.value.replace(/[^0-9]/g, '');
+                                                        handleLocalEdit(p.uid, 'supplyPrice', Number(raw));
+                                                    }}
                                                 />
                                             </div>
                                             <div className="space-y-1">
                                                 <label className="text-[10px] text-slate-500 font-black uppercase">제안가</label>
                                                 <input
-                                                    type="number"
+                                                    type="text"
                                                     className="bg-slate-900/50 border border-white/5 rounded px-2 py-1.5 w-full text-right font-mono font-bold text-primary-500 text-sm"
-                                                    value={editState.sellingPrice ?? p.sellingPrice ?? (p.unitPrice * 1.25)}
-                                                    onChange={(e) => handleLocalEdit(p.id, 'sellingPrice', Number(e.target.value))}
+                                                    value={formatCurrency(editState.sellingPrice ?? p.sellingPrice ?? (p.unitPrice * 1.25))}
+                                                    onChange={(e) => {
+                                                        const raw = e.target.value.replace(/[^0-9]/g, '');
+                                                        handleLocalEdit(p.uid, 'sellingPrice', Number(raw));
+                                                    }}
                                                 />
                                             </div>
                                         </div>
@@ -1931,7 +1974,11 @@ function ProductModal({ product, categories, onSave, onClose, shippingRules }) {
                                 <div className="grid grid-cols-2 gap-4 md:col-span-2">
                                     <div className="space-y-1">
                                         <label className="text-xs text-slate-400 font-bold mb-1 block">온라인 판매가 (참고용)</label>
-                                        <input type="number" className="input-field w-full text-primary-400 font-bold" value={formData.onlinePrice || 0} onChange={(e) => handleChange('onlinePrice', Number(e.target.value))} />
+                                        <input
+                                            type="text" className="input-field w-full text-primary-400 font-bold"
+                                            value={formatCurrency(formData.onlinePrice || 0)}
+                                            onChange={(e) => handleChange('onlinePrice', Number(e.target.value.replace(/[^0-9]/g, '')))}
+                                        />
                                     </div>
                                     <div className="space-y-1">
                                         <label className="text-xs text-slate-400 font-bold mb-1 block">상품 이미지 (파일 업로드 또는 붙여넣기)</label>
@@ -1981,15 +2028,17 @@ function ProductModal({ product, categories, onSave, onClose, shippingRules }) {
                             <div>
                                 <label className="text-xs text-slate-500 font-bold mb-1 block">매입단가 (순수)</label>
                                 <input
-                                    type="number" className="input-field w-full h-12 text-lg font-mono font-bold"
-                                    value={formData.unitPrice} onChange={(e) => handleChange('unitPrice', Number(e.target.value))}
+                                    type="text" className="input-field w-full h-12 text-lg font-mono font-bold"
+                                    value={formatCurrency(formData.unitPrice)}
+                                    onChange={(e) => handleChange('unitPrice', Number(e.target.value.replace(/[^0-9]/g, '')))}
                                 />
                             </div>
                             <div>
                                 <label className="text-xs text-orange-500 font-bold mb-1 block italic animate-pulse">방송 단가 (특별)</label>
                                 <input
-                                    type="number" className="input-field w-full h-12 text-lg font-mono font-bold text-orange-400 border-orange-500/30"
-                                    value={formData.broadcastPrice} onChange={(e) => handleChange('broadcastPrice', Number(e.target.value))}
+                                    type="text" className="input-field w-full h-12 text-lg font-mono font-bold text-orange-400 border-orange-500/30"
+                                    value={formatCurrency(formData.broadcastPrice)}
+                                    onChange={(e) => handleChange('broadcastPrice', Number(e.target.value.replace(/[^0-9]/g, '')))}
                                 />
                             </div>
                             <div>
@@ -2017,17 +2066,18 @@ function ProductModal({ product, categories, onSave, onClose, shippingRules }) {
                                     </optgroup>
                                 </select>
                                 <input
-                                    type="number" className="input-field w-full h-10 font-mono text-sm"
+                                    type="text" className="input-field w-full h-10 font-mono text-sm"
                                     placeholder="직접 입력"
-                                    value={formData.shippingCost}
-                                    onChange={(e) => handleChange('shippingCost', Number(e.target.value))}
+                                    value={formatCurrency(formData.shippingCost)}
+                                    onChange={(e) => handleChange('shippingCost', Number(e.target.value.replace(/[^0-9]/g, '')))}
                                 />
                             </div>
                             <div>
                                 <label className="text-xs text-slate-500 font-bold mb-1 block">포장비</label>
                                 <input
-                                    type="number" className="input-field w-full h-12"
-                                    value={formData.packagingCost} onChange={(e) => handleChange('packagingCost', Number(e.target.value))}
+                                    type="text" className="input-field w-full h-12"
+                                    value={formatCurrency(formData.packagingCost)}
+                                    onChange={(e) => handleChange('packagingCost', Number(e.target.value.replace(/[^0-9]/g, '')))}
                                 />
                             </div>
                             <div>
@@ -2057,21 +2107,21 @@ function ProductModal({ product, categories, onSave, onClose, shippingRules }) {
                                     <label className="text-[10px] text-slate-400 font-bold block">1단계 (소량)</label>
                                     <div className="grid grid-cols-2 gap-2">
                                         <input type="number" className="input-field flex-1 h-10 text-xs font-mono px-2" placeholder="수량" value={formData.t1Qty || ''} onChange={e => handleChange('t1Qty', Number(e.target.value))} />
-                                        <input type="number" className="input-field flex-1 h-10 text-xs font-mono px-2" placeholder="금액" value={formData.t1Cost || ''} onChange={e => handleChange('t1Cost', Number(e.target.value))} />
+                                        <input type="text" className="input-field flex-1 h-10 text-xs font-mono px-2" placeholder="금액" value={formatCurrency(formData.t1Cost || 0)} onChange={e => handleChange('t1Cost', Number(e.target.value.replace(/[^0-9]/g, '')))} />
                                     </div>
                                 </div>
                                 <div className="space-y-2">
                                     <label className="text-[10px] text-slate-400 font-bold block">2단계 (중량)</label>
                                     <div className="grid grid-cols-2 gap-2">
                                         <input type="number" className="input-field flex-1 h-10 text-xs font-mono px-2" placeholder="수량" value={formData.t2Qty || ''} onChange={e => handleChange('t2Qty', Number(e.target.value))} />
-                                        <input type="number" className="input-field flex-1 h-10 text-xs font-mono px-2" placeholder="금액" value={formData.t2Cost || ''} onChange={e => handleChange('t2Cost', Number(e.target.value))} />
+                                        <input type="text" className="input-field flex-1 h-10 text-xs font-mono px-2" placeholder="금액" value={formatCurrency(formData.t2Cost || 0)} onChange={e => handleChange('t2Cost', Number(e.target.value.replace(/[^0-9]/g, '')))} />
                                     </div>
                                 </div>
                                 <div className="space-y-2">
                                     <label className="text-[10px] text-slate-400 font-bold block">3단계 (풀박스)</label>
                                     <div className="grid grid-cols-2 gap-2">
                                         <input type="number" className="input-field flex-1 h-10 text-xs font-mono px-2" placeholder="수량" value={formData.t3Qty || ''} onChange={e => handleChange('t3Qty', Number(e.target.value))} />
-                                        <input type="number" className="input-field flex-1 h-10 text-xs font-mono px-2" placeholder="금액" value={formData.t3Cost || ''} onChange={e => handleChange('t3Cost', Number(e.target.value))} />
+                                        <input type="text" className="input-field flex-1 h-10 text-xs font-mono px-2" placeholder="금액" value={formatCurrency(formData.t3Cost || 0)} onChange={e => handleChange('t3Cost', Number(e.target.value.replace(/[^0-9]/g, '')))} />
                                     </div>
                                 </div>
                             </div>
